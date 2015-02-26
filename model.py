@@ -8,28 +8,26 @@ class Uav(object):
     def __init__(self, env, pos, speed, lethality, target):
         self.env = env
         self.pos = pos
+        self.speed = speed
         self.lethality = lethality
         self.target = target
 
-    """
-        self.action = env.process(self.fly())
+        self.action = env.process(self.blow_up_ship())
 
-    def fly(self):
-        while True:
+    def blow_up_ship(self):
             try:
-                yield self.env.timeout(10)
+                dist_to_ship = sum((self.pos-self.target.pos)**2)**(0.5)
+                # Still need to correct for non-zero ship speed
+                yield self.env.timeout(dist_to_ship/self.speed)
+                print "I blew up the ship! " + str(self.env.now)
             except simpy.Interrupt:
                 # if the UAV is shot down we can cancel the ship impact
-                return
-
-            self.env.process(self.crash())
-
-    def crash(self):
-    """
+                print "I think I was shot down..."
+                pass
 
 class Weapon(object):
     def __init__(self, env, rate, lethality):
-        self = simpy.PreemptiveResource(env, capacity=1)
+        self = simpy.PriorityResource(env, capacity=1)
         self.env = env
         self.rate = rate
         self.lethality = lethality
@@ -49,6 +47,6 @@ class Ship(object):
         self.pos = pos
         self.speed = speed
         self.weapons = weapons
-        self.radar = radar
+        self.radars = radars
 
 
