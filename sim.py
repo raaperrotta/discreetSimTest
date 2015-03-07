@@ -17,12 +17,18 @@ def iterate():
     # Might want a generator function later
     # At least should have a way to delay/stagger the UAV creation
     uavs.append(Uav(env, pos=n.array([100.,0.]), speed=10, lethality=0.8, target=ships[0]))
+    uavs.append(Uav(env, pos=n.array([100.,100.]), speed=10, lethality=0.8, target=ships[0]))
     uavs.append(Uav(env, pos=n.array([110.,0.]), speed=10, lethality=0.8, target=ships[0]))
+    uavs.append(Uav(env, pos=n.array([110.,10.]), speed=10, lethality=0.8, target=ships[0]))
+    uavs.append(Uav(env, pos=n.array([110.,20.]), speed=10, lethality=0.8, target=ships[0]))
+    uavs.append(Uav(env, pos=n.array([110.,30.]), speed=10, lethality=0.8, target=ships[0]))
 
     radars.append(Radar(env, period=2., ranges=[max_detection_range, 20.], p_detect=n.array([0.2, 0.8]), ship=ships[0], uavs=uavs))
     
     weapons.append(Weapon(env, rate=10., lethality=0.01, ship=ships[0]))
     weapons.append(Weapon(env, rate=0.25, lethality=0.2, ship=ships[0]))
+    weapons.append(Weapon(env, rate=2., lethality=0.10, ship=ships[0]))
+    # weapons.append(Weapon(env, rate=4., lethality=0.05, ship=ships[0]))
 
     print " "
     print ships

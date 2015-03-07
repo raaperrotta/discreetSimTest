@@ -33,7 +33,8 @@ class Uav(object):
         if self.reached_ship in result:
             print "%s hit %s at %.2f" % (self, self.target, self.env.now)
         else: # self.shot_down in result
-            print "%s was shot down at %.2f" % (self, self.env.now)
+            pass
+            # print "%s was shot down at %.2f" % (self, self.env.now)
             
             
 class Weapon(object):
@@ -50,7 +51,7 @@ class Weapon(object):
     def __str__(self):
         return "Wpn_" + str(id(self))
 
-    def shoot_uav(self,uav):
+    def shoot_uav(self,uav, request):
         period = 1./self.rate
         time_to_kill = period
         while random.random() > self.lethality:
@@ -64,6 +65,9 @@ class Weapon(object):
         else:
             uav.shot_down.succeed()
             print "%s shot-down %s at %.2f" % (self, uav, self.env.now)
+
+        print "%s is available to shoot again at %.2f" % (self, self.env.now)
+        self.resource.release(request)
 
 
 class Radar(object):
@@ -105,14 +109,31 @@ class Ship(object):
         return "Shp_" + str(id(self))
     
     def alert(self, uav):
-        print "%s is aware of %s at %.2f" % (self, uav, self.env.now)
+        # print "%s is aware of %s at %.2f" % (self, uav, self.env.now)
         events = [uav.reached_ship, uav.shot_down]
+        requests = [] # to iterate over only these events later
+        weaponId = {} # to tell which request goes with which weapon
         for weapon in self.weapons:
-            events.append(weapon.resource.request)
+            request = weapon.resource.request()
+            requests.append(request)
+            weaponId[request] = weapon
             
+        events += requests
         result = yield simpy.events.AnyOf(self.env, events)
         if uav.reached_ship in result or uav.shot_down in result:
-            print "hi"
+            pass # the uav controls these cases
         else:
-            for weapon in result:
-                print weapon
+            # assign first weapon only to shoot at the uav
+            is_first = True
+            for request in requests:
+                if is_first and request in result:
+                    print "%s assigned %s to %s at %.2f" % (self, uav, weaponId[request], self.env.now)
+                    first_request = request
+                    is_first = False
+                else:
+                    weaponId[request].resource.release(request)
+
+            # delay by kill-chain reaction time
+            assignment_lag = 2
+            yield self.env.timeout(assignment_lag)
+            self.env.process(weaponId[first_request].shoot_uav(uav, first_request))
